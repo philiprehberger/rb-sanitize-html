@@ -4,7 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-sanitize_html.svg)](https://rubygems.org/gems/philiprehberger-sanitize_html)
 [![License](https://img.shields.io/github/license/philiprehberger/rb-sanitize-html)](LICENSE)
 
-HTML sanitizer with configurable allow lists for safe user content rendering.
+HTML sanitizer with configurable allow lists for safe user content rendering
 
 ## Requirements
 
