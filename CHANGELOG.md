@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-28
+
+### Added
+
+- CSS property sanitization within `style` attributes - allows only safe CSS properties (color, font-size, margin, etc.) and strips dangerous values (expression, javascript: in url)
+- Predefined security profiles via `profile:` parameter - `:strict` (no tags), `:moderate` (basic formatting), `:permissive` (most safe tags including tables and images), `:markdown` (code, links, formatting, tables)
+- URL attribute sanitization via `allowed_protocols:` parameter - restricts href/src to allowed protocols (defaults to http, https, mailto)
+- Data URI filtering via `allowed_data_mimes:` parameter - allow or deny data: URLs by MIME type (e.g., image/png, image/jpeg)
+- HTML entity decoding normalization before sanitization to prevent encoded bypasses (hex &#x3C; and decimal &#60; entities)
+- Callback hooks for custom tag/attribute processing via `on_tag:` parameter - receives tag name and attributes hash, return nil to remove tag or modified hash to alter attributes
+
 ## [0.1.5] - 2026-03-26
 
 ### Changed
