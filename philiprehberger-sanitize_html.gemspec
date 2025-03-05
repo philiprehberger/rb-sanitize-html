@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ['Philip Rehberger']
   spec.email = ['me@philiprehberger.com']
 
-  spec.summary = 'HTML sanitizer with configurable allow lists for safe user content rendering'
+  spec.summary = 'HTML sanitizer with configurable allow lists, security profiles, and URL/CSS sanitization for safe user content rendering'
   spec.description = 'HTML sanitizer with configurable allow lists for tags and attributes. ' \
                      'Strip dangerous elements like script, style, and iframe tags, remove event ' \
                      'attributes, and safely render user-generated content.'
