@@ -534,8 +534,68 @@ RSpec.describe Philiprehberger::SanitizeHtml do
       expect(described_class::DEFAULT_ALLOWED_DATA_MIMES).to be_frozen
     end
 
-    it 'has four profiles defined' do
-      expect(described_class::PROFILES.keys).to contain_exactly(:strict, :moderate, :permissive, :markdown)
+    it 'has five profiles defined' do
+      expect(described_class::PROFILES.keys).to contain_exactly(:strict, :moderate, :permissive, :markdown, :text_only)
+    end
+  end
+
+  describe '.strip_tags' do
+    it 'strips a simple tag and keeps inner text' do
+      expect(described_class.strip_tags('<b>hi</b>')).to eq('hi')
+    end
+
+    it 'strips nested tags' do
+      html = '<div><p>Hello <em>world</em></p></div>'
+      expect(described_class.strip_tags(html)).to eq('Hello world')
+    end
+
+    it 'removes script tags and their content entirely' do
+      result = described_class.strip_tags('<script>alert(1)</script>')
+      expect(result).to eq('')
+      expect(result).not_to include('alert')
+    end
+
+    it 'removes style tags and their content entirely' do
+      result = described_class.strip_tags('<style>body{}</style>')
+      expect(result).to eq('')
+      expect(result).not_to include('body')
+    end
+
+    it 'decodes &amp; to &' do
+      expect(described_class.strip_tags('Tom &amp; Jerry')).to eq('Tom & Jerry')
+    end
+
+    it "decodes &#39; to '" do
+      expect(described_class.strip_tags('it&#39;s')).to eq("it's")
+    end
+
+    it 'returns empty string for nil' do
+      expect(described_class.strip_tags(nil)).to eq('')
+    end
+
+    it 'returns empty string for empty string' do
+      expect(described_class.strip_tags('')).to eq('')
+    end
+  end
+
+  describe '.clean with :text_only profile' do
+    it 'matches strip_tags for simple tags' do
+      html = '<b>hi</b>'
+      expect(described_class.clean(html, profile: :text_only)).to eq(described_class.strip_tags(html))
+    end
+
+    it 'matches strip_tags for nested tags with entities' do
+      html = '<p>Tom &amp; <em>Jerry</em></p>'
+      expect(described_class.clean(html, profile: :text_only)).to eq(described_class.strip_tags(html))
+    end
+
+    it 'matches strip_tags when removing script content' do
+      html = 'Hi<script>alert(1)</script> there'
+      expect(described_class.clean(html, profile: :text_only)).to eq(described_class.strip_tags(html))
+    end
+
+    it 'matches strip_tags for nil input' do
+      expect(described_class.clean(nil, profile: :text_only)).to eq(described_class.strip_tags(nil))
     end
   end
 end
