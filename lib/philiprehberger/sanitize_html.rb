@@ -30,8 +30,7 @@ module Philiprehberger
       return '' if html.nil? || html.empty?
 
       result = remove_dangerous_tags(html)
-      result = process_tags(result, tags, attributes)
-      result
+      process_tags(result, tags, attributes)
     end
 
     # Remove all HTML tags, returning only text content.
@@ -72,24 +71,22 @@ module Philiprehberger
 
     # @api private
     def self.process_tags(html, allowed_tags, allowed_attributes)
-      html.gsub(%r{<(/?)(\w+)([^>]*)(/?)>}) do |match|
+      html.gsub(%r{<(/?)(\w+)([^>]*)(/?)>}) do |_match|
         closing = Regexp.last_match(1)
         tag = Regexp.last_match(2).downcase
         attrs = Regexp.last_match(3)
         self_closing = Regexp.last_match(4)
 
-        unless allowed_tags.include?(tag)
-          next ''
-        end
+        next '' unless allowed_tags.include?(tag)
 
         clean_attrs = filter_attributes(tag, attrs, allowed_attributes)
 
         if closing == '/'
           "</#{tag}>"
         elsif clean_attrs.empty?
-          "<#{tag}#{self_closing.empty? ? '' : ' /'}>"
+          "<#{tag}#{' /' unless self_closing.empty?}>"
         else
-          "<#{tag} #{clean_attrs}#{self_closing.empty? ? '' : ' /'}>"
+          "<#{tag} #{clean_attrs}#{' /' unless self_closing.empty?}>"
         end
       end
     end
