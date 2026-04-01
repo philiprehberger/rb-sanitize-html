@@ -10,8 +10,8 @@ Gem::Specification.new do |spec|
 
   spec.summary = 'HTML sanitizer with configurable allow lists for safe user content rendering'
   spec.description = 'HTML sanitizer with configurable allow lists for tags and attributes. ' \
-                       'Strip dangerous elements like script, style, and iframe tags, remove event ' \
-                       'attributes, and safely render user-generated content.'
+                     'Strip dangerous elements like script, style, and iframe tags, remove event ' \
+                     'attributes, and safely render user-generated content.'
   spec.homepage = 'https://philiprehberger.com/open-source-packages/ruby/philiprehberger-sanitize_html'
   spec.license = 'MIT'
 
