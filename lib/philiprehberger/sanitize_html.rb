@@ -72,6 +72,10 @@ module Philiprehberger
           'a' => %w[href title],
           'img' => %w[src alt]
         }
+      },
+      text_only: {
+        tags: [],
+        attributes: {}
       }
     }.freeze
 
@@ -80,7 +84,7 @@ module Philiprehberger
     # @param html [String] the HTML string to sanitize
     # @param tags [Array<String>] allowed tag names
     # @param attributes [Hash{String => Array<String>}] allowed attributes per tag
-    # @param profile [Symbol, nil] predefined security profile (:strict, :moderate, :permissive, :markdown)
+    # @param profile [Symbol, nil] predefined security profile (:strict, :moderate, :permissive, :markdown, :text_only)
     # @param allowed_protocols [Array<String>, nil] allowed URL protocols for href/src attributes
     # @param allowed_data_mimes [Array<String>, nil] allowed MIME types for data: URIs
     # @param on_tag [Proc, nil] callback for custom tag processing, receives (tag_name, attributes_hash)
@@ -91,6 +95,8 @@ module Philiprehberger
 
       if profile
         raise Error, "Unknown profile: #{profile}" unless PROFILES.key?(profile)
+
+        return strip_tags(html) if profile == :text_only && tags.nil? && attributes.nil?
 
         profile_config = PROFILES[profile]
         tags ||= profile_config[:tags]
@@ -118,6 +124,19 @@ module Philiprehberger
       text = remove_dangerous_tags(text)
       text = text.gsub(/<[^>]*>/, '')
       decode_entities(text)
+    end
+
+    # Convert HTML to plain text by removing all tags and decoding entities.
+    #
+    # Removes dangerous tags (script, style, iframe) along with their content,
+    # strips all remaining tags while preserving inner text, and decodes HTML
+    # entities so the result is a plain string. Returns an empty string for
+    # nil or empty input.
+    #
+    # @param html [String, nil] the HTML string to convert
+    # @return [String] plain text with no HTML tags or entities
+    def self.strip_tags(html)
+      strip(html)
     end
 
     # Escape all HTML tags by converting < and > to entities.

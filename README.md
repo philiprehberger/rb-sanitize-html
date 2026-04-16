@@ -130,6 +130,22 @@ Philiprehberger::SanitizeHtml.strip('<p>Hello <strong>world</strong></p>')
 # => "Hello world"
 ```
 
+### Plain Text Extraction
+
+```ruby
+# strip_tags removes all HTML and decodes entities for indexing or previews
+Philiprehberger::SanitizeHtml.strip_tags('<p>Tom &amp; Jerry</p>')
+# => "Tom & Jerry"
+
+# script and style content is removed entirely, matching browser behavior
+Philiprehberger::SanitizeHtml.strip_tags('Hi<script>alert(1)</script> there')
+# => "Hi there"
+
+# The :text_only profile is equivalent to strip_tags
+Philiprehberger::SanitizeHtml.clean('<b>hi</b>', profile: :text_only)
+# => "hi"
+```
+
 ### Escape HTML
 
 ```ruby
@@ -143,13 +159,14 @@ Philiprehberger::SanitizeHtml.escape('<p>Hello</p>')
 |--------------------|-------------|
 | `.clean(html, tags:, attributes:, profile:, allowed_protocols:, allowed_data_mimes:, on_tag:)` | Sanitize HTML keeping only allowed tags and attributes with optional security profile, URL sanitization, data URI filtering, and callback hooks |
 | `.strip(html)` | Remove all HTML tags, returning plain text (with entity normalization) |
+| `.strip_tags(html)` | Convert HTML to plain text by removing all tags (including `script`/`style` content) and decoding entities; returns `""` for `nil` or empty input |
 | `.escape(html)` | Entity-encode all HTML special characters |
 | `DEFAULT_ALLOWED_TAGS` | Frozen array of tag names allowed by default (`p`, `br`, `strong`, `em`, `b`, `i`, `u`, `a`, `ul`, `ol`, `li`, `blockquote`, `code`, `pre`, `h1`-`h6`) |
 | `DEFAULT_ALLOWED_ATTRIBUTES` | Frozen hash of attributes allowed per tag (`a` => `href`, `title`; `img` => `src`, `alt`) |
 | `DEFAULT_ALLOWED_PROTOCOLS` | Frozen array of allowed URL protocols (`http`, `https`, `mailto`) |
 | `DEFAULT_ALLOWED_DATA_MIMES` | Frozen empty array of allowed data URI MIME types (none by default) |
 | `SAFE_CSS_PROPERTIES` | Frozen array of CSS property names considered safe for style attributes |
-| `PROFILES` | Frozen hash of predefined security profiles (`:strict`, `:moderate`, `:permissive`, `:markdown`) |
+| `PROFILES` | Frozen hash of predefined security profiles (`:strict`, `:moderate`, `:permissive`, `:markdown`, `:text_only`) |
 | `DANGEROUS_TAGS` | Frozen array of tags always removed with their content (`script`, `style`, `iframe`) |
 | `EVENT_ATTRIBUTE_PATTERN` | Regex matching event-handler attributes (e.g. `onclick`, `onload`) that are always stripped |
 | `Error` | Base error class for the module (`Philiprehberger::SanitizeHtml::Error`) |
