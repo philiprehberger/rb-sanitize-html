@@ -517,6 +517,49 @@ RSpec.describe Philiprehberger::SanitizeHtml do
     end
   end
 
+  describe '.sanitize_url' do
+    it 'passes http URLs through' do
+      expect(described_class.sanitize_url('https://example.com/path')).to eq('https://example.com/path')
+    end
+
+    it 'trims leading/trailing whitespace' do
+      expect(described_class.sanitize_url('  https://example.com  ')).to eq('https://example.com')
+    end
+
+    it 'returns nil for disallowed protocols' do
+      expect(described_class.sanitize_url('javascript:alert(1)')).to be_nil
+    end
+
+    it 'allows fragment-only URLs' do
+      expect(described_class.sanitize_url('#section')).to eq('#section')
+    end
+
+    it 'allows relative paths' do
+      expect(described_class.sanitize_url('/profile')).to eq('/profile')
+    end
+
+    it 'allows custom protocol lists' do
+      expect(described_class.sanitize_url('ftp://files.example.com', allowed_protocols: %w[ftp])).to eq('ftp://files.example.com')
+    end
+
+    it 'rejects data: URIs by default' do
+      expect(described_class.sanitize_url('data:text/html,<script>')).to be_nil
+    end
+
+    it 'accepts allow-listed data: MIME types' do
+      expect(described_class.sanitize_url('data:image/png;base64,AAA',
+                                          allowed_data_mimes: %w[image/png])).to eq('data:image/png;base64,AAA')
+    end
+
+    it 'returns nil for an empty string' do
+      expect(described_class.sanitize_url('   ')).to be_nil
+    end
+
+    it 'returns nil for nil input' do
+      expect(described_class.sanitize_url(nil)).to be_nil
+    end
+  end
+
   describe 'constants' do
     it 'has SAFE_CSS_PROPERTIES frozen' do
       expect(described_class::SAFE_CSS_PROPERTIES).to be_frozen

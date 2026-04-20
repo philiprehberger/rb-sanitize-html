@@ -153,6 +153,28 @@ module Philiprehberger
           .gsub("'", '&#39;')
     end
 
+    # Validate a single URL against an allowlist of protocols and optional
+    # data: MIME types. Returns the trimmed URL when it's safe to use, or
+    # `nil` when the protocol is not permitted.
+    #
+    # Fragment-only (`#foo`), query-only (`?q=1`), and path-relative (`/foo`)
+    # URLs are always considered safe. Protocol-relative URLs (`//example.com`)
+    # are treated as paths and also considered safe. Explicit protocols are
+    # lowercased before the allowlist check; `data:` URIs are permitted only
+    # when the MIME type appears in `allowed_data_mimes`.
+    #
+    # @param url [String] the URL to inspect
+    # @param allowed_protocols [Array<String>] permitted protocol names
+    # @param allowed_data_mimes [Array<String>] permitted data: MIME types
+    # @return [String, nil] the stripped URL when safe, otherwise nil
+    def self.sanitize_url(url, allowed_protocols: DEFAULT_ALLOWED_PROTOCOLS, allowed_data_mimes: DEFAULT_ALLOWED_DATA_MIMES)
+      stripped = url.to_s.strip
+      return nil if stripped.empty?
+      return nil unless valid_url?(stripped, allowed_protocols, allowed_data_mimes)
+
+      stripped
+    end
+
     # @api private
     def self.normalize_entities(html)
       result = html.dup
