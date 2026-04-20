@@ -153,6 +153,19 @@ Philiprehberger::SanitizeHtml.escape('<p>Hello</p>')
 # => "&lt;p&gt;Hello&lt;/p&gt;"
 ```
 
+### Sanitize a Single URL
+
+```ruby
+Philiprehberger::SanitizeHtml.sanitize_url('https://example.com')
+# => "https://example.com"
+
+Philiprehberger::SanitizeHtml.sanitize_url('javascript:alert(1)')
+# => nil
+
+Philiprehberger::SanitizeHtml.sanitize_url('ftp://files.example.com', allowed_protocols: %w[ftp])
+# => "ftp://files.example.com"
+```
+
 ## API
 
 | Method / Constant | Description |
@@ -161,6 +174,7 @@ Philiprehberger::SanitizeHtml.escape('<p>Hello</p>')
 | `.strip(html)` | Remove all HTML tags, returning plain text (with entity normalization) |
 | `.strip_tags(html)` | Convert HTML to plain text by removing all tags (including `script`/`style` content) and decoding entities; returns `""` for `nil` or empty input |
 | `.escape(html)` | Entity-encode all HTML special characters |
+| `.sanitize_url(url, allowed_protocols:, allowed_data_mimes:)` | Validate a single URL; returns the stripped URL when safe or `nil` for disallowed protocols |
 | `DEFAULT_ALLOWED_TAGS` | Frozen array of tag names allowed by default (`p`, `br`, `strong`, `em`, `b`, `i`, `u`, `a`, `ul`, `ol`, `li`, `blockquote`, `code`, `pre`, `h1`-`h6`) |
 | `DEFAULT_ALLOWED_ATTRIBUTES` | Frozen hash of attributes allowed per tag (`a` => `href`, `title`; `img` => `src`, `alt`) |
 | `DEFAULT_ALLOWED_PROTOCOLS` | Frozen array of allowed URL protocols (`http`, `https`, `mailto`) |

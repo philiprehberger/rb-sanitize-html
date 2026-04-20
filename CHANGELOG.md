@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-20
+
+### Added
+- `SanitizeHtml.sanitize_url(url, allowed_protocols:, allowed_data_mimes:)` — validate a standalone URL against the same protocol and data: MIME allow-lists used by `clean`. Returns the stripped URL when safe or `nil` for disallowed protocols, javascript:, empty input, or nil.
+
 ## [0.3.0] - 2026-04-16
 
 ### Added
