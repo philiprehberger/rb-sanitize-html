@@ -621,6 +621,93 @@ RSpec.describe Philiprehberger::SanitizeHtml do
     end
   end
 
+  describe '.clean with :max_length' do
+    it 'raises Error when input exceeds the limit' do
+      html = "<p>#{'a' * 100}</p>"
+      expect { described_class.clean(html, max_length: 10) }
+        .to raise_error(Philiprehberger::SanitizeHtml::Error, /exceeds max_length of 10/)
+    end
+
+    it 'succeeds when input is within the limit' do
+      html = '<p>hi</p>'
+      expect(described_class.clean(html, max_length: 100)).to eq('<p>hi</p>')
+    end
+
+    it 'succeeds when input length equals the limit' do
+      html = '<p>hi</p>'
+      expect(described_class.clean(html, max_length: html.length)).to eq('<p>hi</p>')
+    end
+
+    it 'disables the check when max_length is nil' do
+      html = "<p>#{'a' * 100}</p>"
+      expect { described_class.clean(html, max_length: nil) }.not_to raise_error
+    end
+
+    it 'enforces max_length on .strip' do
+      html = "<p>#{'a' * 100}</p>"
+      expect { described_class.strip(html, max_length: 10) }
+        .to raise_error(Philiprehberger::SanitizeHtml::Error, /exceeds max_length of 10/)
+    end
+
+    it 'enforces max_length on .strip_tags' do
+      html = "<p>#{'a' * 100}</p>"
+      expect { described_class.strip_tags(html, max_length: 10) }
+        .to raise_error(Philiprehberger::SanitizeHtml::Error, /exceeds max_length of 10/)
+    end
+
+    it 'enforces max_length on .escape' do
+      html = "<p>#{'a' * 100}</p>"
+      expect { described_class.escape(html, max_length: 10) }
+        .to raise_error(Philiprehberger::SanitizeHtml::Error, /exceeds max_length of 10/)
+    end
+  end
+
+  describe '.clean with :link_rel' do
+    it 'sets rel on every emitted <a> tag' do
+      html = '<a href="http://example.com">one</a><a href="http://b.com">two</a>'
+      result = described_class.clean(html, link_rel: 'nofollow noopener')
+      expect(result).to eq(
+        '<a href="http://example.com" rel="nofollow noopener">one</a>' \
+        '<a href="http://b.com" rel="nofollow noopener">two</a>'
+      )
+    end
+
+    it 'replaces any existing rel attribute' do
+      html = '<a href="http://example.com" rel="external">link</a>'
+      result = described_class.clean(
+        html,
+        attributes: { 'a' => %w[href rel] },
+        link_rel: 'nofollow noopener'
+      )
+      expect(result).to include('rel="nofollow noopener"')
+      expect(result).not_to include('rel="external"')
+    end
+
+    it 'works even when rel is not in the allowed-attributes list' do
+      html = '<a href="http://example.com">link</a>'
+      result = described_class.clean(html, link_rel: 'nofollow')
+      expect(result).to include('rel="nofollow"')
+    end
+
+    it 'does not affect non-link tags' do
+      html = '<p>text</p><strong>bold</strong>'
+      result = described_class.clean(html, link_rel: 'nofollow noopener')
+      expect(result).to eq('<p>text</p><strong>bold</strong>')
+    end
+
+    it 'leaves output unchanged when link_rel is nil' do
+      html = '<a href="http://example.com">link</a>'
+      expect(described_class.clean(html, link_rel: nil))
+        .to eq('<a href="http://example.com">link</a>')
+    end
+
+    it 'applies even when the <a> would otherwise have no attributes' do
+      html = '<a href="javascript:alert(1)">link</a>'
+      result = described_class.clean(html, link_rel: 'nofollow noopener')
+      expect(result).to eq('<a rel="nofollow noopener">link</a>')
+    end
+  end
+
   describe '.clean with :text_only profile' do
     it 'matches strip_tags for simple tags' do
       html = '<b>hi</b>'

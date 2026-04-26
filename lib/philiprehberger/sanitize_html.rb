@@ -88,10 +88,16 @@ module Philiprehberger
     # @param allowed_protocols [Array<String>, nil] allowed URL protocols for href/src attributes
     # @param allowed_data_mimes [Array<String>, nil] allowed MIME types for data: URIs
     # @param on_tag [Proc, nil] callback for custom tag processing, receives (tag_name, attributes_hash)
+    # @param max_length [Integer, nil] maximum allowed input length; raises {Error} when exceeded
+    # @param link_rel [String, nil] when set, every emitted `<a>` tag is given this exact `rel` attribute,
+    #   replacing any existing rel and bypassing attribute filtering
     # @return [String] sanitized HTML
-    def self.clean(html, tags: nil, attributes: nil, profile: nil,
-                   allowed_protocols: nil, allowed_data_mimes: nil, on_tag: nil)
+    def self.clean(html, tags: nil, attributes: nil, profile: nil, # rubocop:disable Metrics/ParameterLists
+                   allowed_protocols: nil, allowed_data_mimes: nil, on_tag: nil,
+                   max_length: nil, link_rel: nil)
       return '' if html.nil? || html.empty?
+
+      enforce_max_length!(html, max_length)
 
       if profile
         raise Error, "Unknown profile: #{profile}" unless PROFILES.key?(profile)
@@ -110,15 +116,18 @@ module Philiprehberger
 
       result = normalize_entities(html)
       result = remove_dangerous_tags(result)
-      process_tags(result, tags, attributes, allowed_protocols, allowed_data_mimes, on_tag)
+      process_tags(result, tags, attributes, allowed_protocols, allowed_data_mimes, on_tag, link_rel)
     end
 
     # Remove all HTML tags, returning only text content.
     #
     # @param html [String] the HTML string to strip
+    # @param max_length [Integer, nil] maximum allowed input length; raises {Error} when exceeded
     # @return [String] plain text with no HTML tags
-    def self.strip(html)
+    def self.strip(html, max_length: nil)
       return '' if html.nil? || html.empty?
+
+      enforce_max_length!(html, max_length)
 
       text = normalize_entities(html)
       text = remove_dangerous_tags(text)
@@ -134,17 +143,21 @@ module Philiprehberger
     # nil or empty input.
     #
     # @param html [String, nil] the HTML string to convert
+    # @param max_length [Integer, nil] maximum allowed input length; raises {Error} when exceeded
     # @return [String] plain text with no HTML tags or entities
-    def self.strip_tags(html)
-      strip(html)
+    def self.strip_tags(html, max_length: nil)
+      strip(html, max_length: max_length)
     end
 
     # Escape all HTML tags by converting < and > to entities.
     #
     # @param html [String] the HTML string to escape
+    # @param max_length [Integer, nil] maximum allowed input length; raises {Error} when exceeded
     # @return [String] entity-encoded HTML
-    def self.escape(html)
+    def self.escape(html, max_length: nil)
       return '' if html.nil? || html.empty?
+
+      enforce_max_length!(html, max_length)
 
       html.gsub('&', '&amp;')
           .gsub('<', '&lt;')
@@ -201,7 +214,7 @@ module Philiprehberger
     end
 
     # @api private
-    def self.process_tags(html, allowed_tags, allowed_attributes, allowed_protocols, allowed_data_mimes, on_tag)
+    def self.process_tags(html, allowed_tags, allowed_attributes, allowed_protocols, allowed_data_mimes, on_tag, link_rel = nil)
       html.gsub(%r{<(/?)(\w+)([^>]*)(/?)>}) do |_match|
         closing = Regexp.last_match(1)
         tag = Regexp.last_match(2).downcase
@@ -228,6 +241,12 @@ module Philiprehberger
                         filter_attributes(tag, attrs, allowed_attributes, allowed_protocols, allowed_data_mimes)
                       end
 
+        # Force the rel attribute on opening <a> tags when link_rel is set,
+        # bypassing the allowed-attributes filter.
+        if link_rel && tag == 'a' && closing != '/'
+          clean_attrs = override_link_rel(clean_attrs, link_rel)
+        end
+
         if closing == '/'
           "</#{tag}>"
         elsif clean_attrs.empty?
@@ -236,6 +255,22 @@ module Philiprehberger
           "<#{tag} #{clean_attrs}#{' /' unless self_closing.empty?}>"
         end
       end
+    end
+
+    # @api private
+    def self.override_link_rel(clean_attrs, link_rel)
+      without_rel = clean_attrs.gsub(/\s*\brel="[^"]*"/, '').strip
+      rel_attr = "rel=\"#{escape_attr(link_rel)}\""
+      without_rel.empty? ? rel_attr : "#{without_rel} #{rel_attr}"
+    end
+
+    # @api private
+    def self.enforce_max_length!(html, max_length)
+      return if max_length.nil?
+      return unless max_length.is_a?(Integer) && max_length.positive?
+      return if html.length <= max_length
+
+      raise Error, "input exceeds max_length of #{max_length} characters"
     end
 
     # @api private
@@ -374,6 +409,7 @@ module Philiprehberger
     private_class_method :remove_dangerous_tags, :process_tags, :filter_attributes,
                          :filter_attributes_from_hash, :parse_attributes,
                          :escape_attr, :decode_entities, :normalize_entities,
-                         :url_attribute?, :valid_url?, :sanitize_css
+                         :url_attribute?, :valid_url?, :sanitize_css,
+                         :override_link_rel, :enforce_max_length!
   end
 end

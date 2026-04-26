@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-25
+
+### Added
+- `max_length:` parameter on `clean`, `strip`, `strip_tags` — raises `SanitizeHtml::Error` when input exceeds the limit
+- `link_rel:` parameter on `clean` — applies a fixed `rel` attribute (e.g. `'nofollow noopener'`) to every emitted `<a>` tag
+
 ## [0.4.0] - 2026-04-20
 
 ### Added

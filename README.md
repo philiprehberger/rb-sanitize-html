@@ -123,6 +123,22 @@ result = Philiprehberger::SanitizeHtml.clean(
 # => "<p>Keep</p>"
 ```
 
+### Length Limits
+
+```ruby
+require "philiprehberger/sanitize_html"
+
+Philiprehberger::SanitizeHtml.clean(html, max_length: 10_000)
+# raises Philiprehberger::SanitizeHtml::Error when html.length > 10_000
+```
+
+### Link rel attribute
+
+```ruby
+Philiprehberger::SanitizeHtml.clean(html, link_rel: 'nofollow noopener')
+# every <a> in the output has rel="nofollow noopener"
+```
+
 ### Strip All Tags
 
 ```ruby
@@ -170,10 +186,12 @@ Philiprehberger::SanitizeHtml.sanitize_url('ftp://files.example.com', allowed_pr
 
 | Method / Constant | Description |
 |--------------------|-------------|
-| `.clean(html, tags:, attributes:, profile:, allowed_protocols:, allowed_data_mimes:, on_tag:)` | Sanitize HTML keeping only allowed tags and attributes with optional security profile, URL sanitization, data URI filtering, and callback hooks |
-| `.strip(html)` | Remove all HTML tags, returning plain text (with entity normalization) |
-| `.strip_tags(html)` | Convert HTML to plain text by removing all tags (including `script`/`style` content) and decoding entities; returns `""` for `nil` or empty input |
-| `.escape(html)` | Entity-encode all HTML special characters |
+| `.clean(html, tags:, attributes:, profile:, allowed_protocols:, allowed_data_mimes:, on_tag:, max_length:, link_rel:)` | Sanitize HTML keeping only allowed tags and attributes with optional security profile, URL sanitization, data URI filtering, callback hooks, input length limit, and forced `<a>` `rel` attribute |
+| `.strip(html, max_length:)` | Remove all HTML tags, returning plain text (with entity normalization). Raises `Error` when input exceeds `max_length` |
+| `.strip_tags(html, max_length:)` | Convert HTML to plain text by removing all tags (including `script`/`style` content) and decoding entities; returns `""` for `nil` or empty input. Raises `Error` when input exceeds `max_length` |
+| `.escape(html, max_length:)` | Entity-encode all HTML special characters. Raises `Error` when input exceeds `max_length` |
+| `max_length:` | Optional positive `Integer` accepted by `clean`/`strip`/`strip_tags`/`escape`; raises `SanitizeHtml::Error` when the input string length exceeds the limit (check happens before sanitization) |
+| `link_rel:` | Optional `String` accepted by `clean` (e.g. `'nofollow noopener'`); when set, every emitted `<a>` tag has its `rel` attribute force-set to this value, bypassing attribute filtering |
 | `.sanitize_url(url, allowed_protocols:, allowed_data_mimes:)` | Validate a single URL; returns the stripped URL when safe or `nil` for disallowed protocols |
 | `DEFAULT_ALLOWED_TAGS` | Frozen array of tag names allowed by default (`p`, `br`, `strong`, `em`, `b`, `i`, `u`, `a`, `ul`, `ol`, `li`, `blockquote`, `code`, `pre`, `h1`-`h6`) |
 | `DEFAULT_ALLOWED_ATTRIBUTES` | Frozen hash of attributes allowed per tag (`a` => `href`, `title`; `img` => `src`, `alt`) |
