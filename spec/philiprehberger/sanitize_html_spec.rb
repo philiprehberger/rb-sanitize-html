@@ -708,6 +708,53 @@ RSpec.describe Philiprehberger::SanitizeHtml do
     end
   end
 
+  describe '.clean with :link_target' do
+    it 'sets target on every emitted <a> tag' do
+      html = '<a href="http://example.com">one</a><a href="http://b.com">two</a>'
+      result = described_class.clean(html, link_target: '_blank')
+      expect(result).to include('<a href="http://example.com" rel="noopener noreferrer" target="_blank">one</a>')
+      expect(result).to include('<a href="http://b.com" rel="noopener noreferrer" target="_blank">two</a>')
+    end
+
+    it 'auto-injects rel="noopener noreferrer" when link_rel is not provided' do
+      html = '<a href="http://example.com">link</a>'
+      result = described_class.clean(html, link_target: '_blank')
+      expect(result).to include('rel="noopener noreferrer"')
+      expect(result).to include('target="_blank"')
+    end
+
+    it 'lets explicit link_rel win over the auto-injected noopener noreferrer' do
+      html = '<a href="http://example.com">link</a>'
+      result = described_class.clean(html, link_target: '_blank', link_rel: 'nofollow')
+      expect(result).to include('rel="nofollow"')
+      expect(result).not_to include('noopener noreferrer')
+      expect(result).to include('target="_blank"')
+    end
+
+    it 'replaces any existing target attribute' do
+      html = '<a href="http://example.com" target="_self">link</a>'
+      result = described_class.clean(
+        html,
+        attributes: { 'a' => %w[href target] },
+        link_target: '_blank'
+      )
+      expect(result).to include('target="_blank"')
+      expect(result).not_to include('target="_self"')
+    end
+
+    it 'does not affect non-link tags' do
+      html = '<p>text</p><strong>bold</strong>'
+      result = described_class.clean(html, link_target: '_blank')
+      expect(result).to eq('<p>text</p><strong>bold</strong>')
+    end
+
+    it 'leaves output unchanged when link_target is nil' do
+      html = '<a href="http://example.com">link</a>'
+      expect(described_class.clean(html, link_target: nil))
+        .to eq('<a href="http://example.com">link</a>')
+    end
+  end
+
   describe '.clean with :text_only profile' do
     it 'matches strip_tags for simple tags' do
       html = '<b>hi</b>'

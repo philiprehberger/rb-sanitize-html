@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-29
+
+### Added
+- `link_target:` parameter on `clean` — every emitted `<a>` tag receives the given `target` (typically `"_blank"`). When `link_target` is set and `link_rel` is nil, the sanitizer auto-injects `rel="noopener noreferrer"` to prevent reverse-tabnabbing. When both are set, `link_rel` wins.
+
 ## [0.5.0] - 2026-04-25
 
 ### Added

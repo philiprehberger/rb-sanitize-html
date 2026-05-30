@@ -4,6 +4,8 @@
 [![Gem Version](https://badge.fury.io/rb/philiprehberger-sanitize_html.svg)](https://rubygems.org/gems/philiprehberger-sanitize_html)
 [![Last updated](https://img.shields.io/github/last-commit/philiprehberger/rb-sanitize-html)](https://github.com/philiprehberger/rb-sanitize-html/commits/main)
 
+![philiprehberger-sanitize_html](https://raw.githubusercontent.com/philiprehberger/rb-sanitize-html/main/package-card.webp)
+
 HTML sanitizer with configurable allow lists, security profiles, and URL/CSS sanitization for safe user content rendering
 
 ## Requirements
@@ -139,6 +141,18 @@ Philiprehberger::SanitizeHtml.clean(html, link_rel: 'nofollow noopener')
 # every <a> in the output has rel="nofollow noopener"
 ```
 
+### Link target attribute
+
+```ruby
+# Force target on every emitted <a>. When no link_rel is given, the
+# sanitizer auto-injects rel="noopener noreferrer" to prevent
+# reverse-tabnabbing.
+Philiprehberger::SanitizeHtml.clean(html, link_target: '_blank')
+
+# Both can be combined; link_rel wins.
+Philiprehberger::SanitizeHtml.clean(html, link_target: '_blank', link_rel: 'nofollow')
+```
+
 ### Strip All Tags
 
 ```ruby
@@ -186,12 +200,13 @@ Philiprehberger::SanitizeHtml.sanitize_url('ftp://files.example.com', allowed_pr
 
 | Method / Constant | Description |
 |--------------------|-------------|
-| `.clean(html, tags:, attributes:, profile:, allowed_protocols:, allowed_data_mimes:, on_tag:, max_length:, link_rel:)` | Sanitize HTML keeping only allowed tags and attributes with optional security profile, URL sanitization, data URI filtering, callback hooks, input length limit, and forced `<a>` `rel` attribute |
+| `.clean(html, tags:, attributes:, profile:, allowed_protocols:, allowed_data_mimes:, on_tag:, max_length:, link_rel:, link_target:)` | Sanitize HTML keeping only allowed tags and attributes with optional security profile, URL sanitization, data URI filtering, callback hooks, input length limit, and forced `<a>` `rel` / `target` attributes |
 | `.strip(html, max_length:)` | Remove all HTML tags, returning plain text (with entity normalization). Raises `Error` when input exceeds `max_length` |
 | `.strip_tags(html, max_length:)` | Convert HTML to plain text by removing all tags (including `script`/`style` content) and decoding entities; returns `""` for `nil` or empty input. Raises `Error` when input exceeds `max_length` |
 | `.escape(html, max_length:)` | Entity-encode all HTML special characters. Raises `Error` when input exceeds `max_length` |
 | `max_length:` | Optional positive `Integer` accepted by `clean`/`strip`/`strip_tags`/`escape`; raises `SanitizeHtml::Error` when the input string length exceeds the limit (check happens before sanitization) |
 | `link_rel:` | Optional `String` accepted by `clean` (e.g. `'nofollow noopener'`); when set, every emitted `<a>` tag has its `rel` attribute force-set to this value, bypassing attribute filtering |
+| `link_target:` | Optional `String` accepted by `clean` (e.g. `'_blank'`); when set, every emitted `<a>` tag has its `target` attribute force-set to this value. When `link_target` is set and `link_rel` is not, the sanitizer auto-injects `rel="noopener noreferrer"` to prevent reverse-tabnabbing |
 | `.sanitize_url(url, allowed_protocols:, allowed_data_mimes:)` | Validate a single URL; returns the stripped URL when safe or `nil` for disallowed protocols |
 | `DEFAULT_ALLOWED_TAGS` | Frozen array of tag names allowed by default (`p`, `br`, `strong`, `em`, `b`, `i`, `u`, `a`, `ul`, `ol`, `li`, `blockquote`, `code`, `pre`, `h1`-`h6`) |
 | `DEFAULT_ALLOWED_ATTRIBUTES` | Frozen hash of attributes allowed per tag (`a` => `href`, `title`; `img` => `src`, `alt`) |

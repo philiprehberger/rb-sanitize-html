@@ -91,10 +91,13 @@ module Philiprehberger
     # @param max_length [Integer, nil] maximum allowed input length; raises {Error} when exceeded
     # @param link_rel [String, nil] when set, every emitted `<a>` tag is given this exact `rel` attribute,
     #   replacing any existing rel and bypassing attribute filtering
+    # @param link_target [String, nil] when set, every emitted `<a>` tag is given this exact `target` attribute.
+    #   When `link_target` is non-nil and `link_rel` is nil, `rel="noopener noreferrer"` is also injected to
+    #   prevent reverse-tabnabbing. When both are set, `link_rel` wins.
     # @return [String] sanitized HTML
     def self.clean(html, tags: nil, attributes: nil, profile: nil, # rubocop:disable Metrics/ParameterLists
                    allowed_protocols: nil, allowed_data_mimes: nil, on_tag: nil,
-                   max_length: nil, link_rel: nil)
+                   max_length: nil, link_rel: nil, link_target: nil)
       return '' if html.nil? || html.empty?
 
       enforce_max_length!(html, max_length)
@@ -114,9 +117,15 @@ module Philiprehberger
       allowed_protocols ||= DEFAULT_ALLOWED_PROTOCOLS
       allowed_data_mimes ||= DEFAULT_ALLOWED_DATA_MIMES
 
+      effective_link_rel = if link_target && link_rel.nil?
+                             'noopener noreferrer'
+                           else
+                             link_rel
+                           end
+
       result = normalize_entities(html)
       result = remove_dangerous_tags(result)
-      process_tags(result, tags, attributes, allowed_protocols, allowed_data_mimes, on_tag, link_rel)
+      process_tags(result, tags, attributes, allowed_protocols, allowed_data_mimes, on_tag, effective_link_rel, link_target)
     end
 
     # Remove all HTML tags, returning only text content.
@@ -214,7 +223,8 @@ module Philiprehberger
     end
 
     # @api private
-    def self.process_tags(html, allowed_tags, allowed_attributes, allowed_protocols, allowed_data_mimes, on_tag, link_rel = nil)
+    def self.process_tags(html, allowed_tags, allowed_attributes, allowed_protocols,
+                          allowed_data_mimes, on_tag, link_rel = nil, link_target = nil)
       html.gsub(%r{<(/?)(\w+)([^>]*)(/?)>}) do |_match|
         closing = Regexp.last_match(1)
         tag = Regexp.last_match(2).downcase
@@ -241,10 +251,11 @@ module Philiprehberger
                         filter_attributes(tag, attrs, allowed_attributes, allowed_protocols, allowed_data_mimes)
                       end
 
-        # Force the rel attribute on opening <a> tags when link_rel is set,
+        # Force the rel/target attributes on opening <a> tags when set,
         # bypassing the allowed-attributes filter.
-        if link_rel && tag == 'a' && closing != '/'
-          clean_attrs = override_link_rel(clean_attrs, link_rel)
+        if tag == 'a' && closing != '/'
+          clean_attrs = override_link_rel(clean_attrs, link_rel) if link_rel
+          clean_attrs = override_link_target(clean_attrs, link_target) if link_target
         end
 
         if closing == '/'
@@ -262,6 +273,13 @@ module Philiprehberger
       without_rel = clean_attrs.gsub(/\s*\brel="[^"]*"/, '').strip
       rel_attr = "rel=\"#{escape_attr(link_rel)}\""
       without_rel.empty? ? rel_attr : "#{without_rel} #{rel_attr}"
+    end
+
+    # @api private
+    def self.override_link_target(clean_attrs, link_target)
+      without_target = clean_attrs.gsub(/\s*\btarget="[^"]*"/, '').strip
+      target_attr = "target=\"#{escape_attr(link_target)}\""
+      without_target.empty? ? target_attr : "#{without_target} #{target_attr}"
     end
 
     # @api private
@@ -410,6 +428,6 @@ module Philiprehberger
                          :filter_attributes_from_hash, :parse_attributes,
                          :escape_attr, :decode_entities, :normalize_entities,
                          :url_attribute?, :valid_url?, :sanitize_css,
-                         :override_link_rel, :enforce_max_length!
+                         :override_link_rel, :override_link_target, :enforce_max_length!
   end
 end
